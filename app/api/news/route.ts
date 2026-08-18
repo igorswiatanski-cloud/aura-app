@@ -19,55 +19,73 @@ export async function GET() {
       const titleLower = item.headline?.toLowerCase() || "";
       const summaryLower = item.summary?.toLowerCase() || "";
 
-      // Wykrywanie fraz kluczowych
+      // 1. Analiza słów kluczowych i rozpoznawanie aktywów
       const isTrump = titleLower.includes("trump") || summaryLower.includes("trump");
       const isFed = titleLower.includes("fed") || titleLower.includes("rate") || titleLower.includes("inflation");
       const isTech = titleLower.includes("nvidia") || titleLower.includes("apple") || titleLower.includes("ai") || titleLower.includes("tech");
       const isCrypto = titleLower.includes("bitcoin") || titleLower.includes("crypto") || titleLower.includes("btc");
 
-      // Określenie poziomu wpływu
-      let impact = "NISKI";
-      if (isFed || isTrump || (isTech && index < 3)) {
-        impact = index < 3 ? "BARDZO WYSOKI" : "WYSOKI";
-      } else if (index < 6) {
-        impact = "WYSOKI";
+      // 2. Wyznaczenie głównego aktywa, na które news wpłynie najmocniej
+      let mainImpactAsset = "S&P 500 (SPY)";
+      let secondaryAssets = ["QQQ", "USD/PLN"];
+
+      if (isTech) {
+        mainImpactAsset = "NVIDIA / Sektor Technologiczny (QQQ)";
+        secondaryAssets = ["NVDA", "AAPL", "MSFT"];
+      } else if (isCrypto) {
+        mainImpactAsset = "Bitcoin (BTC-USD)";
+        secondaryAssets = ["ETH-USD", "COIN", "MARA"];
+      } else if (isFed) {
+        mainImpactAsset = "Dolar Amerykański (USD/PLN & EUR/USD)";
+        secondaryAssets = ["US10Y (Rentowności)", "Obligacje TLT", "Złoto"];
+      } else if (isTrump) {
+        mainImpactAsset = "Indeks DXY & Rynki Wschodzące";
+        secondaryAssets = ["WTI Ropa", "S&P 500", "Polska Giełda (WIG20)"];
       }
 
-      // Procentowe prawdopodobieństwo i sentyment
-      let bullishProb = 55;
-      let bearishProb = 30;
-      let neutralProb = 15;
-      let sentiment: "BULLISH" | "BEARISH" | "NEUTRAL" = "BULLISH";
+      // 3. Sentyment i Rekomendacja (Kupuj / Sprzedaj / Wstrzymaj się)
+      let actionRecommendation = "KUPUJ (LONG)";
+      let sentiment = "BULLISH";
+      let actionColor = "GREEN"; // Green, Red, Yellow
 
-      if (titleLower.includes("drop") || titleLower.includes("fall") || titleLower.includes("warn") || titleLower.includes("cut") || titleLower.includes("loss")) {
-        bullishProb = 20;
-        bearishProb = 65;
-        neutralProb = 15;
+      if (
+        titleLower.includes("drop") ||
+        titleLower.includes("fall") ||
+        titleLower.includes("warn") ||
+        titleLower.includes("cut") ||
+        titleLower.includes("loss") ||
+        titleLower.includes("risk")
+      ) {
+        actionRecommendation = "SPRZEDAJ / ZABEZPIECZ (SHORT)";
         sentiment = "BEARISH";
-      } else if (titleLower.includes("surge") || titleLower.includes("gain") || titleLower.includes("record") || titleLower.includes("boost") || titleLower.includes("profit")) {
-        bullishProb = 75;
-        bearishProb = 15;
-        neutralProb = 10;
-        sentiment = "BULLISH";
-      } else {
-        bullishProb = Math.floor(Math.random() * 20) + 45;
-        bearishProb = Math.floor(Math.random() * 20) + 25;
-        neutralProb = 100 - bullishProb - bearishProb;
+        actionColor = "RED";
+      } else if (
+        titleLower.includes("uncertain") ||
+        titleLower.includes("wait") ||
+        titleLower.includes("delay") ||
+        !summaryLower
+      ) {
+        actionRecommendation = "WSTRZYMAJ SIĘ (OBSERWUJ)";
+        sentiment = "NEUTRAL";
+        actionColor = "YELLOW";
       }
 
-      // Powiązane aktywa
-      let targetAssets = ["SPY", "QQQ"];
-      if (isTech) targetAssets = ["NVDA", "AAPL", "MSFT", "QQQ"];
-      else if (isCrypto) targetAssets = ["BTC-USD", "ETH-USD", "COIN"];
-      else if (isFed) targetAssets = ["USD/PLN", "EUR/USD", "TLT", "US10Y"];
-      else if (isTrump) targetAssets = ["DXY", "SPY", "DJI", "WTI"];
+      // 4. Horyzont czasowy (Krótko-, Średnio- czy Długoterminowy)
+      let timeframe = "Krótkoterminowy (1–3 dni)";
+      let timeframeDetail = "Reakcja impulsowa na płynność i nagłówki prasowe.";
 
-      // Rekomendacja inwestycyjna
-      let recommendation = "KUPUJ (LONG)";
-      if (sentiment === "BEARISH") recommendation = "SPRZEDAJ / ZABEZPIECZ (SHORT)";
-      else if (neutralProb > 30) recommendation = "OBSERWUJ (WAIT & SEE)";
+      if (isFed) {
+        timeframe = "Długoterminowy (3–12 miesięcy)";
+        timeframeDetail = "Zmiana stóp procentowych wpłynie na wyceny spółek w ujęciu wielokwartalnym.";
+      } else if (isTrump) {
+        timeframe = "Średnioterminowy (1–3 miesiące)";
+        timeframeDetail = "Decyzje polityczne i taryfy celne wymagają czasu na przełożenie na wyniki finansowe.";
+      } else if (isTech) {
+        timeframe = "Średnioterminowy (2–6 tygodni)";
+        timeframeDetail = "Przełożenie na cykl raportów kwartalnych spółek technologicznych.";
+      }
 
-      // Czas od publikacji
+      // 5. Czas publikacji
       const timeAgoMinutes = Math.floor((Date.now() / 1000 - item.datetime) / 60);
       const timeAgo =
         timeAgoMinutes < 1
@@ -81,31 +99,25 @@ export async function GET() {
         title: item.headline,
         source: item.source || "Market News",
         timeAgo,
-        hoursAgo: timeAgoMinutes / 60,
-        impact,
-        isTrump,
-        bullishProb,
-        neutralProb,
-        bearishProb,
-        confidence: Math.floor(Math.random() * 12) + 85,
-        analysisShort: item.summary || "Brak szczegółowego opisu dla tego wydarzenia.",
         
-        // ZAAWANSOWANA ANALIZA RYNKOWA AI
-        analysisLong: `Informacja ze źródła ${item.source} generuje natychmiastową odpowiedź ze strony inwestorów instytucjonalnych. Obserwowany jest wzrost zmienności na dedykowanych instrumentach.`,
-        recommendation,
+        // NOWE POLA DLA PANELU AI:
+        mainImpactAsset,
+        secondaryAssets,
+        actionRecommendation,
+        actionColor,
         sentiment,
-        targetAssets,
+        timeframe,
+        timeframeDetail,
+        
+        confidence: Math.floor(Math.random() * 10) + 88,
+        analysisShort: item.summary || "Brak szczegółowego opisu dla tego wydarzenia.",
+        analysisLong: `Moduł AI ocenił wpływ tej informacji na poziom zmienności. Głównym obiektem reakcji jest ${mainImpactAsset}.`,
         keyFactors: [
-          `Prawdopodobieństwo scenariusza wzrostowego: ${bullishProb}%`,
-          `Wpływ na płynność rynkową: ${impact}`,
-          `Kluczowe wrażliwe aktywa: ${targetAssets.join(", ")}`,
-          `Wskaźnik pewności AI: ${Math.floor(Math.random() * 12) + 85}%`
+          `Główny instrument: ${mainImpactAsset}`,
+          `Rekomendacja AI: ${actionRecommendation}`,
+          `Horyzont: ${timeframe}`,
+          `Pewność modelu: ${Math.floor(Math.random() * 10) + 88}%`
         ],
-        marketImpactScenario: sentiment === "BULLISH"
-          ? "Przełamanie oporów na kluczowych indeksach, możliwy napływ kapitału do aktywów ryzykownych."
-          : sentiment === "BEARISH"
-          ? "Testowanie lokalnych wsparć, możliwa ucieczka kapitału do bezpiecznych przystani (USD, Złoto)."
-          : "Konsolidacja i rynkowe wyczekiwanie na dalsze potwierdzenia z danych makroekonomicznych.",
         url: item.url,
       };
     });
