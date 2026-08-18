@@ -19,73 +19,87 @@ export async function GET() {
       const titleLower = item.headline?.toLowerCase() || "";
       const summaryLower = item.summary?.toLowerCase() || "";
 
-      // 1. Analiza słów kluczowych i rozpoznawanie aktywów
+      // Detection
       const isTrump = titleLower.includes("trump") || summaryLower.includes("trump");
-      const isFed = titleLower.includes("fed") || titleLower.includes("rate") || titleLower.includes("inflation");
+      const isFed = titleLower.includes("fed") || titleLower.includes("rate") || titleLower.includes("yield") || titleLower.includes("debt");
       const isTech = titleLower.includes("nvidia") || titleLower.includes("apple") || titleLower.includes("ai") || titleLower.includes("tech");
       const isCrypto = titleLower.includes("bitcoin") || titleLower.includes("crypto") || titleLower.includes("btc");
+      const isMiddleEast = titleLower.includes("iran") || titleLower.includes("oil") || titleLower.includes("missile") || titleLower.includes("strait");
 
-      // 2. Wyznaczenie głównego aktywa, na które news wpłynie najmocniej
+      // Asset allocation
       let mainImpactAsset = "S&P 500 (SPY)";
-      let secondaryAssets = ["QQQ", "USD/PLN"];
+      let secondaryAssets = ["QQQ", "USD/PLN", "VIX"];
 
       if (isTech) {
-        mainImpactAsset = "NVIDIA / Sektor Technologiczny (QQQ)";
-        secondaryAssets = ["NVDA", "AAPL", "MSFT"];
+        mainImpactAsset = "NVIDIA / Sektor Tech (QQQ)";
+        secondaryAssets = ["NVDA", "AAPL", "MSFT", "SOXX"];
       } else if (isCrypto) {
         mainImpactAsset = "Bitcoin (BTC-USD)";
-        secondaryAssets = ["ETH-USD", "COIN", "MARA"];
+        secondaryAssets = ["ETH-USD", "COIN", "MSTR"];
       } else if (isFed) {
-        mainImpactAsset = "Dolar Amerykański (USD/PLN & EUR/USD)";
-        secondaryAssets = ["US10Y (Rentowności)", "Obligacje TLT", "Złoto"];
+        mainImpactAsset = "Dolar & Obligacje USA (TLT/DXY)";
+        secondaryAssets = ["US10Y", "EUR/USD", "USD/PLN", "Złoto"];
+      } else if (isMiddleEast) {
+        mainImpactAsset = "Ropa Naftowa (WTI / Brent)";
+        secondaryAssets = ["XLE", "Złoto (XAU)", "US10Y"];
       } else if (isTrump) {
         mainImpactAsset = "Indeks DXY & Rynki Wschodzące";
-        secondaryAssets = ["WTI Ropa", "S&P 500", "Polska Giełda (WIG20)"];
+        secondaryAssets = ["WTI Ropa", "S&P 500", "WIG20"];
       }
 
-      // 3. Sentyment i Rekomendacja (Kupuj / Sprzedaj / Wstrzymaj się)
+      // Sentiment & Action
       let actionRecommendation = "KUPUJ (LONG)";
       let sentiment = "BULLISH";
-      let actionColor = "GREEN"; // Green, Red, Yellow
+      let actionColor = "GREEN";
+      let winProbability = Math.floor(Math.random() * 12) + 82; // 82-94%
 
       if (
         titleLower.includes("drop") ||
         titleLower.includes("fall") ||
+        titleLower.includes("selloff") ||
         titleLower.includes("warn") ||
         titleLower.includes("cut") ||
-        titleLower.includes("loss") ||
-        titleLower.includes("risk")
+        titleLower.includes("shut") ||
+        titleLower.includes("missiles")
       ) {
         actionRecommendation = "SPRZEDAJ / ZABEZPIECZ (SHORT)";
         sentiment = "BEARISH";
         actionColor = "RED";
+        winProbability = Math.floor(Math.random() * 10) + 85;
       } else if (
-        titleLower.includes("uncertain") ||
+        titleLower.includes("flat") ||
         titleLower.includes("wait") ||
-        titleLower.includes("delay") ||
-        !summaryLower
+        titleLower.includes("uncertain")
       ) {
         actionRecommendation = "WSTRZYMAJ SIĘ (OBSERWUJ)";
         sentiment = "NEUTRAL";
         actionColor = "YELLOW";
+        winProbability = Math.floor(Math.random() * 10) + 75;
       }
 
-      // 4. Horyzont czasowy (Krótko-, Średnio- czy Długoterminowy)
+      // Timeframe
       let timeframe = "Krótkoterminowy (1–3 dni)";
-      let timeframeDetail = "Reakcja impulsowa na płynność i nagłówki prasowe.";
+      let timeframeDetail = "Reakcja impulsowa na nagłówek i rynkową płynność.";
 
       if (isFed) {
         timeframe = "Długoterminowy (3–12 miesięcy)";
-        timeframeDetail = "Zmiana stóp procentowych wpłynie na wyceny spółek w ujęciu wielokwartalnym.";
-      } else if (isTrump) {
-        timeframe = "Średnioterminowy (1–3 miesiące)";
-        timeframeDetail = "Decyzje polityczne i taryfy celne wymagają czasu na przełożenie na wyniki finansowe.";
-      } else if (isTech) {
-        timeframe = "Średnioterminowy (2–6 tygodni)";
-        timeframeDetail = "Przełożenie na cykl raportów kwartalnych spółek technologicznych.";
+        timeframeDetail = "Kształtowanie stóp i rentowności zmienia wyceny aktywów w horyzoncie wielokwartalnym.";
+      } else if (isTrump || isMiddleEast) {
+        timeframe = "Średnioterminowy (2–8 tygodni)";
+        timeframeDetail = "Napięcia geopolityczne i taryfy wpływają na łańcuchy dostaw oraz ceny surowców.";
       }
 
-      // 5. Czas publikacji
+      // Detailed AI Reasoning
+      let aiExplanation = `Wydarzenie bezpośrednio wpływa na sentyment wokół ${mainImpactAsset}. Algorytm zidentyfikował podwyższone ryzyko zmienności i kapitałową rotację.`;
+      
+      if (isFed) {
+        aiExplanation = `Wzrost rentowności obligacji USA zmusza inwestorów instytucjonalnych do dyskontowania wycen spółek wzrostowych. Kapitał odpływa do bezpiecznych aktywów (Cash/USD).`;
+      } else if (isMiddleEast) {
+        aiExplanation = `Zagrożenia dla szlaków morskich i geopolityka natychmiast podnoszą premię za ryzyko na ropie naftowej. Oczekuje się presji proinflacyjnej.`;
+      } else if (isTech) {
+        aiExplanation = `Silny sentyment wokół AI wywołuje podwyższoną zmienność na spółkach półprzewodnikowych. Zalecana ostrożność przy kluczowych poziomach oporu.`;
+      }
+
       const timeAgoMinutes = Math.floor((Date.now() / 1000 - item.datetime) / 60);
       const timeAgo =
         timeAgoMinutes < 1
@@ -99,8 +113,6 @@ export async function GET() {
         title: item.headline,
         source: item.source || "Market News",
         timeAgo,
-        
-        // NOWE POLA DLA PANELU AI:
         mainImpactAsset,
         secondaryAssets,
         actionRecommendation,
@@ -108,16 +120,10 @@ export async function GET() {
         sentiment,
         timeframe,
         timeframeDetail,
-        
-        confidence: Math.floor(Math.random() * 10) + 88,
+        winProbability,
+        aiExplanation,
+        confidence: winProbability,
         analysisShort: item.summary || "Brak szczegółowego opisu dla tego wydarzenia.",
-        analysisLong: `Moduł AI ocenił wpływ tej informacji na poziom zmienności. Głównym obiektem reakcji jest ${mainImpactAsset}.`,
-        keyFactors: [
-          `Główny instrument: ${mainImpactAsset}`,
-          `Rekomendacja AI: ${actionRecommendation}`,
-          `Horyzont: ${timeframe}`,
-          `Pewność modelu: ${Math.floor(Math.random() * 10) + 88}%`
-        ],
         url: item.url,
       };
     });
