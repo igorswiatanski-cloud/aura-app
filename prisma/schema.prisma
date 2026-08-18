@@ -1,0 +1,27 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Asset {
+  id           String   @id @default(uuid())
+  symbol       String   @unique
+  name         String
+  currentPrice Float?
+  priceChange  Float?
+}
+
+model NewsEvent {
+  id          String   @id @default(uuid())
+  title       String
+  summary     String
+  sourceName  String
+  sourceUrl   String
+  impactLevel String   @default("MEDIUM")
+  isTrump     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
